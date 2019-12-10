@@ -2,9 +2,10 @@ import React from 'react';
 import { Node as NodeShape } from './styled';
 
 const Node = (props) => {
+
     return (
         <NodeShape>
-            {props.children}
+            {props.title && props.title}
         </NodeShape>
     );
 }
