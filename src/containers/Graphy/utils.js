@@ -15,3 +15,13 @@ export const makeHashId = str => {
     }
     return hash;
 };
+
+/*
+*
+*   Returns the distance between A and B
+*
+*/
+export const distance = ( x1, y1, x2, y2 ) => {
+    const offset = {x: x2 - x1, y: y2 - y1 }
+    return Math.sqrt(Math.pow(offset.x, 2) + Math.pow(offset.y, 2));
+}

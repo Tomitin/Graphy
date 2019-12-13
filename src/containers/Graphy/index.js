@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Node from './../../components/organisms/Node';
 import { GraphyCanvas } from './styled';
 import NodeInstantiator from './nodeInstantiator';
+import { distance } from './utils';
 
 const Graphy = () => {
     const [axis, setAxis] = useState({x:0,y:0});
@@ -10,6 +11,7 @@ const Graphy = () => {
     //Future redux data in store
     const [nodes, setNodes] = useState([]);
     const [nodeId, setNodeId] = useState(0);
+    const [links, setLinks] = useState([]);
 
     useEffect(() => {
         const ctx = getCanvas2d();
@@ -29,10 +31,10 @@ const Graphy = () => {
         // scale the canvas
         canvas.setAttribute('height', style_height * dpi);
         canvas.setAttribute('width', style_width * dpi);
-
     }
 
     const handleClick = (e) => {
+
         //  setShowForm(true); //  show form with input add/cancel when the node is in pre creation process
         //                      //  todo: show the input,buttons centered relative[x,y] to the node
     }
@@ -48,6 +50,19 @@ const Graphy = () => {
             node
         ]);
         console.log(nodes);
+    }
+
+    const handleClickHold = mouse => {
+        nodes.map((node) => {
+            //import dist
+            console.log(mouse.clientX, mouse.clientY);
+            if(distance(node.pos.x, node.pos.y, mouse.clientX, mouse.clientY) < 18){
+                alert("Me clickeaste!")
+                // Create line from center of node to cursor
+                // while being in connection state(0  cursor---0) a user clicks in one different node, the node clicked should
+                // be linked to the first node like so: 0-----0
+            }
+        });
     }
 
     //return the position of the mouse relative to the container where the mouse resides in
@@ -78,7 +93,7 @@ const Graphy = () => {
 
     return (
         <>
-            <GraphyCanvas ref={canvasEl} onDoubleClick={handleDoubleClick} onClick={handleClick} onMouseMove={handleMouseMove}>
+            <GraphyCanvas ref={canvasEl} onMouseDown={handleClickHold} onDoubleClick={handleDoubleClick} onClick={handleClick} onMouseMove={handleMouseMove}>
                 {/* show form that later will output a node.*/}
 
                 {nodes && nodes.map((node) => {
