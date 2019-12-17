@@ -9,7 +9,7 @@ class NodeInstantiator {
     
     getNode = () => {
         const nodeId = makeHashId(`node${this.id}`);
-        const node = { id: nodeId.toString(), pos:{x:this.position.x, y:this.position.y} };
+        const node = { id: nodeId.toString(), pos:{x: this.position.x, y: this.position.y} };
         return node;
     }
 }
