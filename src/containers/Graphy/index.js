@@ -8,14 +8,14 @@ const Graphy = () => {
     const [mousePos, setMousePos] = useState({x:0,y:0});
     const [mousePressed, setMousePressed] = useState(false);
     const canvasEl = useRef(null);
-    //Future redux data in store
+    // Future redux data in store
     const [nodes, setNodes] = useState([]);
     const [nodeId, setNodeId] = useState(0);
     const [links, setLinks] = useState([]);
     const [nodeSource, setNodeSource] = useState({});
-    //constants
+    // constants
     const NODE_SIZE = 30;
-    //drawing variables
+    // drawing variables
     const [isLinkingNodes,setIsLinkingNodes] = useState(false);
 
     useEffect(() => {
@@ -35,15 +35,34 @@ const Graphy = () => {
     const handleMouseUp = event => {
         setMousePressed(false);
         if(isLinkingNodes) {
-            // console.log('linking nodes...')
             const nodeTarget = nodes.find(node => parseInt(distance(node.pos.x, node.pos.y, mousePos.x, mousePos.y)) < NODE_SIZE);
             connectNodes(nodeSource.getNode(), nodeTarget);
+            
+            // Reset canvas for redrawing
             setIsLinkingNodes(false);
+            nodeSource.destroy();
+            const canvas = canvasEl.current;
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            
             // console.log(links)
         }
     }
 
+    const isElementInArrayRepeated = (array, value) => {
+        //pass callback to make it more specific if needed. 
+        //the validation right below should not be included as default :}
+        return array.some(element =>  {
+            return (
+                (element.source == value.source && element.target == value.target)
+                || (element.source == value.target && element.target == value.source)
+            );  
+        });
+    }
+
     const connectNodes = (nodeA, nodeB) => {
+        if(!nodeA || !nodeB) return;
+        if(isElementInArrayRepeated(links, { source: nodeA.id, target: nodeB.id })) return;
         setLinks([
             ...links,
             {
@@ -51,19 +70,18 @@ const Graphy = () => {
                 target: nodeB.id,
             },
         ]);
+        console.log(links)
     }
 
-    //delete
-    const createLine = (start, end) => {
+    const renderClickLink = (start, end) => {
         const context = getContext2d();
         context.beginPath();
         context.moveTo(start.x, start.y);
         context.lineTo(end.x, end.y)
         context.stroke();
-
     }
 
-    const renderLink = link => {
+    const renderNodeLink = link => {
         const source = getNodeById(link.source);
         const target = getNodeById(link.target);
 
@@ -73,7 +91,7 @@ const Graphy = () => {
         context.lineTo(target.pos.x, target.pos.y)
         context.stroke();
 
-        console.log(links)
+        // console.log(links)
     }
 
     const getNodeById = id => {
@@ -117,12 +135,10 @@ const Graphy = () => {
                 isMouseInsideNode = distanceFromNode < NODE_SIZE;
                 if(isMouseInsideNode == false) isMouseInsideNode = distanceFromNode < NODE_SIZE;
                 if( (isMouseInsideNode && mousePressed) || isLinkingNodes) {
-                    // console.log('distanceFromNode', distanceFromNode, 'from node', node.id)
-                    //TODO>  look up for singletons
                     setIsLinkingNodes(true);
                     const nodeToLink = new NodeSource(node);
                     setNodeSource(nodeToLink);
-                    createLine(node.pos, mousePos);
+                    renderClickLink(nodeToLink.getNode().pos, mousePos);
                 }
             });
         }
@@ -174,7 +190,7 @@ const Graphy = () => {
                 })}
                 {links && links.map(link => {
                     return (
-                        renderLink(link)
+                        renderNodeLink(link)
                     );
                 })}
             </GraphyCanvas>

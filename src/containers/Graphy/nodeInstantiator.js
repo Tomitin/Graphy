@@ -1,4 +1,3 @@
-import React from 'react';
 import { makeHashId } from './utils';
 
 class NodeInstantiator {
