@@ -45,24 +45,30 @@ const Graphy = () => {
             const context = canvas.getContext('2d');
             context.clearRect(0, 0, canvas.width, canvas.height);
             
-            // console.log(links)
         }
     }
 
-    const isElementInArrayRepeated = (array, value) => {
+    const isElementInArray = (array, value, callback = null) => {
         //pass callback to make it more specific if needed. 
-        //the validation right below should not be included as default :}
+        if (callback) return callback(array, value);
+
+        return array.some(element => element === value);
+    }
+
+    const isConnectionRepeated = (array, value) => {
+        if (value.source === value.target) return true;
+
         return array.some(element =>  {
             return (
-                (element.source == value.source && element.target == value.target)
-                || (element.source == value.target && element.target == value.source)
+                (element.source === value.source && element.target === value.target)
+                || (element.source === value.target && element.target === value.source)
             );  
         });
     }
 
     const connectNodes = (nodeA, nodeB) => {
         if(!nodeA || !nodeB) return;
-        if(isElementInArrayRepeated(links, { source: nodeA.id, target: nodeB.id })) return;
+        if(isElementInArray(links, { source: nodeA.id, target: nodeB.id }, isConnectionRepeated)) return;
         setLinks([
             ...links,
             {
@@ -70,7 +76,6 @@ const Graphy = () => {
                 target: nodeB.id,
             },
         ]);
-        console.log(links)
     }
 
     const renderClickLink = (start, end) => {
@@ -90,8 +95,6 @@ const Graphy = () => {
         context.moveTo(source.pos.x, source.pos.y);
         context.lineTo(target.pos.x, target.pos.y)
         context.stroke();
-
-        // console.log(links)
     }
 
     const getNodeById = id => {
@@ -133,7 +136,7 @@ const Graphy = () => {
             nodes.map(node => {
                 const distanceFromNode = parseInt(distance(node.pos.x, node.pos.y, mousePos.x, mousePos.y));
                 isMouseInsideNode = distanceFromNode < NODE_SIZE;
-                if(isMouseInsideNode == false) isMouseInsideNode = distanceFromNode < NODE_SIZE;
+                if(isMouseInsideNode === false) isMouseInsideNode = distanceFromNode < NODE_SIZE;
                 if( (isMouseInsideNode && mousePressed) || isLinkingNodes) {
                     setIsLinkingNodes(true);
                     const nodeToLink = new NodeSource(node);
