@@ -4,13 +4,18 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { ThemeProvider } from 'styled-components';
+import { createStore } from 'redux';
+import theme from './themes/default';
+import { Provider } from 'react-redux';
+import rootReducer from './containers/rootReducer';
 
-import theme from './themes/default'
-
+const store = createStore(rootReducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__());
 
 ReactDOM.render(
     <ThemeProvider theme={theme}>
-        <App />
+        <Provider store={store}>
+            <App />
+        </Provider>
     </ThemeProvider>
     , document.getElementById('root'));
 

@@ -16,3 +16,22 @@ export class NodeSource {
         NodeSource.instance = null;
     }
 }
+
+export class SelectedNode {
+    constructor(node = {}) {
+        if(!!SelectedNode.instance) {
+            return NodeSource.instance;
+        }
+        SelectedNode.instance = this;
+        this.node = node;
+        return this;
+    }
+
+    getNode() {
+        return this.node;
+    }
+
+    destroy() {
+        SelectedNode.instance = null;
+    }
+}
