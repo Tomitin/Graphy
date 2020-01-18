@@ -10,7 +10,10 @@ export const Button = styled.button`
     border:  none;
     color: white;
     text-align: center;
-    padding: ${props => props.padding? props.padding : '12px 26px'};
+    border-radius: ${props => props.borderRadius};
+    padding: ${props => props.padding};
+    height: ${props => props.height};
+    width: ${props => props.width};
     cursor: pointer;
     font-size: 16px;
     :hover {

@@ -1,4 +1,4 @@
-import { makeHashId } from '../utils';
+import { makeHashId } from 'containers/utils';
 import { DEFAULT_COLOR } from './constants'
 
 // convert to interface and make a generic class for both edges and nodes
@@ -9,6 +9,8 @@ export class NodeInstantiator {
         this.color = color;
         this.node = { 
             id: this.id.toString(),
+            title: `Node${id}`,
+            description: '',
             pos: {
                 x: this.position.x,
                 y: this.position.y

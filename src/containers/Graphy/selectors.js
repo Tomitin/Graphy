@@ -5,12 +5,18 @@ const nodesByIdSelector = state => state.graphReducer.nodes.byIds;
 const selectedNodeSelector = state => state.graphReducer.nodes.selectedNode;
 const edgesIdsSelector = state => state.graphReducer.edges.allIds;
 const edgesByIdSelector = state => state.graphReducer.edges.byIds;
-const edges = state => state.graphReducer.edges;
-const nodes = state => state.graphReducer.nodes;
+const edgesSelector = state => state.graphReducer.edges;
+const nodesSelector = state => state.graphReducer.nodes;
+const graphSelector = state => state.graphReducer;
 
 export const allNodesSelector = createSelector(
     nodesIdsSelector,
     allIds => allIds
+);
+
+export const getGraphSelector = createSelector(
+    graphSelector,
+    graph => graph
 );
 
 export const getSelectedNode = createSelector(
@@ -34,7 +40,7 @@ export const edgeByIdSelector = createSelector(
 )
 
 export const arrayEdgesSelector = createSelector(
-    edges,
+    edgesSelector,
     edges => {
         const allEdges = edges.allIds.map(id => {
             return edges.byIds[id]
@@ -44,7 +50,7 @@ export const arrayEdgesSelector = createSelector(
 )
 
 export const arrayNodesSelector = createSelector(
-    nodes,
+    nodesSelector,
     nodes => {
         const allNodes = nodes.allIds.map(id => {
             return nodes.byIds[id]

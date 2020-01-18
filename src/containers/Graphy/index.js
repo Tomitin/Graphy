@@ -1,71 +1,115 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GraphyCanvas, SpeechBubble } from './styled';
-import { NodeInstantiator, EdgeInstantiator } from './GraphInstantiator';
-import { distance } from '../utils';
-import { NodeSource, SelectedNode } from './singletons';
-import IconButton from '../../components/molecules/IconButton';
-import { SELECTED_COLOR, NODE_SIZE, NODES, DEFAULT_COLOR } from "./constants";
 import { useDispatch, useSelector } from 'react-redux';
-import { addNode, addEdge, selectNode, changeColor } from './actions';
-import { nodeByIdSelector, arrayEdgesSelector, arrayNodesSelector, getSelectedNode } from './selectors';
+import { SELECTED_COLOR, NODE_SIZE, NODES, DEFAULT_COLOR } from "./constants";
+import { NodeInstantiator, EdgeInstantiator } from './GraphInstantiator';
+import FileUploadIcon from 'components/molecules/FileUploadIcon';
+import IconButton from 'components/molecules/IconButton';
+import Navbar from 'components/organisms/Navbar';
+import SideMenu from 'components/organisms/SideMenu';
+import { distance } from 'containers/utils';
+import { GraphyCanvas, IconGroupCanvas, GraphContainer } from './styled';
+import { NodeSource } from './singletons';
+import { 
+    addNode,
+    addEdge, 
+    selectNode, 
+    changeColor, 
+    restartGraph, 
+    addGraph, 
+    updateNode 
+} from './actions';
+import { 
+    nodeByIdSelector, 
+    arrayEdgesSelector, 
+    arrayNodesSelector, 
+    getSelectedNode, 
+    getGraphSelector, 
+    allEdgesSelector, 
+    allNodesSelector 
+} from './selectors';
 
 const Graphy = () => {
     // container data
-    const [nodeId, setNodeId] = useState(0);
-    const [edgeId, setEdgeId] = useState(0);
     const [nodeSource, setNodeSource] = useState({});
-    const [mousePos, setMousePos] = useState({x:0,y:0});
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [mousePressed, setMousePressed] = useState(false);
-    const canvasEl = useRef(null);
-    // drawing variables
-    const [isLinkingNodes,setIsLinkingNodes] = useState(false);    
-    // redux data
     const dispatch = useDispatch();
+    const canvasEl = useRef(null);
+    //icon button group
+    const saveIconLink = useRef(null);
+    // drawing variables
+    const [isLinkingNodes, setIsLinkingNodes] = useState(false);
+    // redux data
+    const nodeId = useSelector(state => allNodesSelector(state)).length;
+    const edgeId = useSelector(state => allEdgesSelector(state)).length;
+    const graph = useSelector(state => getGraphSelector(state));
     const getNodeById = useSelector(state => nodeByIdSelector(state));
     const edges = useSelector(state => arrayEdgesSelector(state));
     const nodes = useSelector(state => arrayNodesSelector(state));
-    const selectedNode = useSelector(state => getSelectedNode(state));
+    const selectedNodeId = useSelector(state => getSelectedNode(state));
 
     useEffect(() => {
         const canvas = canvasEl.current;
-        canvas.setAttribute('height', '400px');
-        canvas.setAttribute('width', '1200px');
+        canvas.setAttribute('height', '600px');
+        canvas.setAttribute('width', '1400px');
     }, []);
 
     /* ==================================================== Events ================================================================ */
 
-    const handleClick = (event) => {
-        const node = getNodeByDistance();
-        if(!node) return;
+    const handleFormSubmit = (event, inputs) => {
+        event.preventDefault();
+        //modify actual node with the inputs values
+        const modifiedNode = { ...getNodeById[selectedNodeId], ...inputs }
+        //update the node state in redux store
+        dispatch(updateNode(modifiedNode));
+    }
 
-        //actual node to DEFAULT COLOR
-        if(selectedNode != null) dispatch(changeColor(getNodeById[selectedNode].id, DEFAULT_COLOR))
+    const handleSaveClick = event => {
+        // Get graph reducer in store and convert it to json file 
+        const graphJson = JSON.stringify(graph);
+        // Convert json into a downloable file
+        const blob = new Blob([graphJson], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+
+        saveIconLink.current.href = url;    
+        saveIconLink.current.download = "Graph.json";
+        saveIconLink.current.type = "application/json";
+    }
+
+    const handleUploadClick = event => {
+        if(!event.target.files[0]) return;
+        clearCanvas();
+        dispatch(restartGraph());
+        //from all the files the user selected, pick the first one
+        const files = event.target.files
+        const file = files[0];
         
+        const fileReader = new FileReader();
+        // 2.When it finishes to read the file, execute the function to get the data
+        fileReader.onload = (() => event => {
+            const json = event.target.result;
+            const parsedGraph = JSON.parse(json);
+            dispatch(addGraph(parsedGraph))
+        })();
+        // 1.Read the file
+        fileReader.readAsText(file);
+    }
+
+    const handleEraseClick = event => {
+        clearCanvas();
+        dispatch(restartGraph());
+    }
+
+    const handleClick = event => {
+        const node = getNodeByDistance();
+        if (!node) return;
+        //actual node to DEFAULT COLOR
+        if (selectedNodeId != null) dispatch(changeColor(selectedNodeId, DEFAULT_COLOR))
         dispatch(selectNode(node.id))
         //not actual node to SELECTED_COLOR
         const nodeColor = SELECTED_COLOR;
         const nodeId = node.id;
         dispatch(changeColor(nodeId, nodeColor));
-
-
-
-        // highlight the clicked node with an unique color or wonderful way of describing that the node is selected :)
-        // maybe another SINGLETON would be the way of achieving this
-        /* hype menu that shows all the information of the node
-            Form
-              / Input, label, button
-            iconed button with callbacks such as quit from the menu view
-            form example:
-                Circle information                    |quit|
-                Title:
-                    title displayed in node
-                description:
-                    anything that the user wants to write
-                images>
-                    probably a later feature
-                         ____
-                        |SAVE|
-        */    
     }
 
     const handleDoubleClick = event => {
@@ -80,7 +124,7 @@ const Graphy = () => {
 
     const handleMouseUp = event => {
         setMousePressed(false);
-        if(isLinkingNodes) {
+        if (isLinkingNodes) {
             const nodeTarget = getNodeByDistance();
             connectNodes(nodeSource.getNode(), nodeTarget);
             // Reset canvas for redrawing
@@ -89,7 +133,7 @@ const Graphy = () => {
             clearCanvas();
         }
     }
-    
+
     const handleMouseMove = mouse => {
         const canvas = canvasEl.current;
         const context = getContext2d();
@@ -101,15 +145,15 @@ const Graphy = () => {
         //Display cursor poitner when mouse is inside node
         setMousePos(mousePosInCanvas);
         const node = getNodeByDistance();
-        node? canvas.style.cursor = 'pointer' : canvas.style.cursor = 'default';
-        if(mousePressed) {
+        node ? canvas.style.cursor = 'pointer' : canvas.style.cursor = 'default';
+        if (mousePressed) {
             // Clear canvas every render
             context.clearRect(0, 0, canvas.width, canvas.height);
             nodes.map(node => {
                 const distanceFromNode = parseInt(distance(node.pos.x, node.pos.y, mousePos.x, mousePos.y));
                 isMouseInsideNode = distanceFromNode < NODE_SIZE;
-                if(isMouseInsideNode === false) isMouseInsideNode = distanceFromNode < NODE_SIZE;
-                if( (isMouseInsideNode && mousePressed) || isLinkingNodes) {
+                if (isMouseInsideNode === false) isMouseInsideNode = distanceFromNode < NODE_SIZE;
+                if ((isMouseInsideNode && mousePressed) || isLinkingNodes) {
                     setIsLinkingNodes(true);
                     const nodeToLink = new NodeSource(node);
                     setNodeSource(nodeToLink);
@@ -118,7 +162,6 @@ const Graphy = () => {
             });
         }
     }
-
 
     /* =================================================== Edges ============================================================== */
 
@@ -132,18 +175,18 @@ const Graphy = () => {
     const isConnectionRepeated = (array, value) => {
         if (value.source === value.target) return true;
 
-        return array.some(element =>  {
+        return array.some(element => {
             return (
                 (element.source === value.source && element.target === value.target)
                 || (element.source === value.target && element.target === value.source)
-            );  
+            );
         });
     }
     const connectNodes = (nodeA, nodeB) => {
-        if(!nodeA || !nodeB) return;
+        if (!nodeA || !nodeB) return;
 
-        if(isElementInArray(edges, { source: nodeA.id, target: nodeB.id }, isConnectionRepeated)) return;
-        setEdgeId(edgeId + 1);
+        if (isElementInArray(edges, { source: nodeA.id, target: nodeB.id }, isConnectionRepeated)) 
+            return alert('This connection has already been made.');
         const edgeInstantiator = new EdgeInstantiator(edgeId, nodeA.id, nodeB.id);
         dispatch(addEdge(edgeInstantiator.getEdge()));
     }
@@ -178,7 +221,6 @@ const Graphy = () => {
     const createNode = event => {
         const canvasPos = getLocalCanvasAxis(canvasEl.current); // abs. size of element
         const nodePos = getMousePositionInCanvas(event, canvasPos);
-        setNodeId(nodeId + 1);
         const nodeInstantiator = new NodeInstantiator(nodeId, nodePos);
         dispatch(addNode(nodeInstantiator.getNode()));
     };
@@ -195,7 +237,7 @@ const Graphy = () => {
     };
 
     /* ================================================= Helper functions ========================================================== */
-    
+
     const clearCanvas = () => {
         const canvas = canvasEl.current;
         const context = getContext2d();
@@ -204,7 +246,7 @@ const Graphy = () => {
 
     // Return the axis relative to the canvas
     const getMousePositionInCanvas = (mouse, canvasPos) => {
-        return {x: mouse.clientX - canvasPos.x, y: mouse.clientY - canvasPos.y};
+        return { x: mouse.clientX - canvasPos.x, y: mouse.clientY - canvasPos.y };
     };
 
     const getContext2d = () => {
@@ -213,10 +255,10 @@ const Graphy = () => {
     };
 
     // Returns the position where the canvas element is located on the page, 
-    const getLocalCanvasAxis = (canvas) => {
-        var xPosition = 0;
-        var yPosition = 0;
-        
+    const getLocalCanvasAxis = canvas => {
+        let xPosition = 0;
+        let yPosition = 0;
+
         while (canvas) {
             xPosition += (canvas.offsetLeft - canvas.scrollLeft + canvas.clientLeft);
             yPosition += (canvas.offsetTop - canvas.scrollTop + canvas.clientTop);
@@ -231,28 +273,35 @@ const Graphy = () => {
     /* =================================================== Rendering ========================================================== */
     return (
         <>
-        {selectedNode && (
-            //position above the selected node, displaying all options (position absolute)
-            <SpeechBubble>
-                <IconButton iconName='coffee'/>
-                <IconButton iconName='coffee'/>
-                <IconButton iconName='coffee'/>
-            </SpeechBubble>
-        )}
-            <GraphyCanvas 
-                ref={canvasEl} 
-                onMouseDown={handleClickHold}
-                onClick={handleClick}
-                onDoubleClick={handleDoubleClick} 
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-            >
-                {/* show form that later will output a node.*/}
+            <Navbar />
+            {selectedNodeId &&
+                <SideMenu
+                    handleFormSubmit={handleFormSubmit}
+                    title={getNodeById[selectedNodeId].title}
+                    description={getNodeById[selectedNodeId].description}
+                />
+            }
+            <GraphContainer>
+                <IconGroupCanvas>
+                    <a ref={saveIconLink}><IconButton onClick={handleSaveClick} borderRadius='50%' iconName='save'></IconButton></a>
+                    <FileUploadIcon onChange={handleUploadClick} borderRadius={'50%'} />
+                    <IconButton borderRadius='50%' iconName='question'></IconButton>
+                    <IconButton onClick={handleEraseClick} borderRadius='50%' iconName='trash'></IconButton>
+                </IconGroupCanvas>
+                <GraphyCanvas
+                    ref={canvasEl}
+                    onMouseDown={handleClickHold}
+                    onClick={handleClick}
+                    onDoubleClick={handleDoubleClick}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                >
 
-                { edges && renderEdges() }
-                { nodes && renderNodes() }
-            </GraphyCanvas>
-            <h4 style={{float: "right"}}>Coordinates: [{mousePos.x},{mousePos.y}]</h4>
+                    {edges && renderEdges()}
+                    {nodes && renderNodes()}
+                </GraphyCanvas>
+            </GraphContainer>
+            <h4 style={{ float: "right" }}>Coordinates: [{mousePos.x},{mousePos.y}]</h4>
         </>
     );
 }

@@ -21,6 +21,10 @@ theme.palette = {
   ],
 }
 
+theme.colors = {
+  main: '#E84549',
+}
+
 theme.reversePalette = reversePalette(theme.palette)
 
 theme.fonts = {
@@ -33,4 +37,4 @@ theme.sizes = {
   maxWidth: '1100px',
 }
 
-export default theme
+export default theme;

@@ -1,12 +1,25 @@
 import styled from 'styled-components';
 
 export const GraphyCanvas = styled.canvas`
-    position: absolute;
-    top: 20%;
-    left: 10%;
-    width: 1200px;
-    height: 400px;
+    width: 100%;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+`;
 
+export const IconGroupCanvas = styled.div`
+    background: #00bfb6;
+    position: absolute;
+    right: 0;
+    display: table;
+    text-align: center;
+`;
+
+export const GraphContainer = styled.div`
+    position: relative;
+    width: 1400px;
+    height: 600px;
     border-color:grey;
     border-style: solid;
     border-width: 5px;

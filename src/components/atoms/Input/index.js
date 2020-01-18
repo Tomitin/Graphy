@@ -27,12 +27,14 @@ const Input = (props) => {
 
 Input.propTypes = {
     type: PropTypes.string,
-    height: PropTypes.number,
+    height: PropTypes.string,
     invalid: PropTypes.bool,
+    placeholder: PropTypes.string,
 }
 
 Input.defaultProps = {
     type: 'text',
-    height: '40',
+    placeholder: 'Write something...',
+    height: '40px',
 }
 export default Input;

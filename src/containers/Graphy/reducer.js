@@ -1,4 +1,4 @@
-import { ADD_NODE, ADD_EDGE, SELECT_NODE, CHANGE_COLOR, NODES, EDGES } from "./constants";
+import { ADD_NODE, ADD_EDGE, SELECT_NODE, CHANGE_COLOR, NODES, EDGES, ADD_GRAPH, RESTART_GRAPH, UPDATE_NODE } from "./constants";
 
 const initialState = {
     [NODES]: {
@@ -14,6 +14,12 @@ const initialState = {
 }
 const graphReducer = (state = initialState, action) => {
     switch(action.type) {
+        case ADD_GRAPH: {
+            return action.payload;
+        }
+        case RESTART_GRAPH: {
+            return initialState;
+        }
         case ADD_NODE: {
             const { id } = action.payload;
             return {
@@ -31,13 +37,28 @@ const graphReducer = (state = initialState, action) => {
             }
         }
         case SELECT_NODE: {
-            // maybe selectednode could be changed to selected and make it more general so I can use it with edges aswell 
+            //TODO:maybe selectednode could be changed to selected and make it more general so I can use it with edges aswell 
             const id = action.payload;
             return {
                 ...state,
                 [NODES]: {
                     ...state[NODES],
                     selectedNode: id
+                }
+            }
+        }
+        case UPDATE_NODE: {
+            const { id } = action.payload;
+            return {
+                ...state,
+                [NODES]: {
+                    ...state[NODES],
+                    byIds: {
+                        ...state[NODES].byIds,
+                        [id]: {
+                            ...action.payload
+                        }
+                    }
                 }
             }
         }
