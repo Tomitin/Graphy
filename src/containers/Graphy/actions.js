@@ -1,4 +1,14 @@
-import { ADD_NODE, ADD_EDGE, SELECT_NODE, CHANGE_COLOR, ADD_GRAPH, RESTART_GRAPH, UPDATE_NODE } from './constants';
+import { 
+    ADD_NODE, 
+    ADD_EDGE, 
+    SELECT_NODE, 
+    CHANGE_COLOR, 
+    ADD_GRAPH, 
+    RESTART_GRAPH, 
+    UPDATE_NODE,
+    INCREMENT_NODE_SIZE,
+    DECREASE_NODE_SIZE
+} from './constants';
 
 export const addNode = node => {
     return {
@@ -48,5 +58,17 @@ export const addGraph = graph => {
 export const restartGraph = () => {
     return {
         type: RESTART_GRAPH
+    }
+}
+
+export const incrementNodeSize = () => {
+    return {
+        type: INCREMENT_NODE_SIZE
+    }
+}
+
+export const decreaseNodeSize = () => {
+    return {
+        type: DECREASE_NODE_SIZE
     }
 }

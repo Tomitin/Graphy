@@ -9,11 +9,8 @@ export const GraphyCanvas = styled.canvas`
 `;
 
 export const IconGroupCanvas = styled.div`
-    background: #00bfb6;
     position: absolute;
     right: 0;
-    display: table;
-    text-align: center;
 `;
 
 export const GraphContainer = styled.div`
@@ -26,7 +23,6 @@ export const GraphContainer = styled.div`
 `;
 
 export const SpeechBubble = styled.div`
-    background: #00bfb6;
     display: table;
     text-align: center;
     font-weight: 900;

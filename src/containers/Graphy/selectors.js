@@ -8,6 +8,7 @@ const edgesByIdSelector = state => state.graphReducer.edges.byIds;
 const edgesSelector = state => state.graphReducer.edges;
 const nodesSelector = state => state.graphReducer.nodes;
 const graphSelector = state => state.graphReducer;
+const nodeSizeSelector = state => state.graphReducer.nodes.config.size;
 
 export const allNodesSelector = createSelector(
     nodesIdsSelector,
@@ -37,7 +38,12 @@ export const nodeByIdSelector = createSelector(
 export const edgeByIdSelector = createSelector(
     edgesByIdSelector,
     byIds => byIds
-)
+);
+
+export const getNodeSize = createSelector(
+    nodeSizeSelector,
+    size => size   
+);
 
 export const arrayEdgesSelector = createSelector(
     edgesSelector,
@@ -47,7 +53,7 @@ export const arrayEdgesSelector = createSelector(
         });
         return allEdges;
     }
-)
+);
 
 export const arrayNodesSelector = createSelector(
     nodesSelector,
@@ -57,4 +63,4 @@ export const arrayNodesSelector = createSelector(
         });
         return allNodes;
     }
-)
+);

@@ -7,6 +7,8 @@ export const CHANGE_COLOR = 'CHANGE_COLOR';
 export const ADD_GRAPH = 'ADD_GRAPH'; 
 export const RESTART_GRAPH = 'RESTART_GRAPH';
 export const UPDATE_NODE = 'UPDATE_NODE';
+export const INCREMENT_NODE_SIZE = 'INCREMENT_NODE_SIZE';
+export const DECREASE_NODE_SIZE = 'DECREASE_NODE_SIZE';
 // COLORS
 export const SELECTED_COLOR = '#ff2052';
 export const DEFAULT_COLOR = '#000000';
