@@ -1,10 +1,26 @@
-import { ADD_NODE, ADD_EDGE, SELECT_NODE, CHANGE_COLOR, NODES, EDGES, ADD_GRAPH, RESTART_GRAPH, UPDATE_NODE } from "./constants";
+import { 
+    ADD_NODE, 
+    ADD_EDGE, 
+    SELECT_NODE, 
+    CHANGE_COLOR, 
+    NODES, 
+    EDGES, 
+    ADD_GRAPH, 
+    RESTART_GRAPH, 
+    UPDATE_NODE,
+    NODE_SIZE,
+    INCREMENT_NODE_SIZE,
+    DECREASE_NODE_SIZE,
+} from "./constants";
 
 const initialState = {
     [NODES]: {
         selectedNode: null,
         byIds: {},
-        allIds: []
+        allIds: [],
+        config: {
+            size: NODE_SIZE,
+        }
     },
     [EDGES]: {
         selectedEdge: null,
@@ -37,7 +53,6 @@ const graphReducer = (state = initialState, action) => {
             }
         }
         case SELECT_NODE: {
-            //TODO:maybe selectednode could be changed to selected and make it more general so I can use it with edges aswell 
             const id = action.payload;
             return {
                 ...state,
@@ -89,6 +104,30 @@ const graphReducer = (state = initialState, action) => {
                             ...state[NODES].byIds[id],
                             color
                         }
+                    }
+                }
+            }
+        }
+        case INCREMENT_NODE_SIZE: {
+            return {
+                ...state,
+                [NODES]: {
+                    ...state[NODES],
+                    config: {
+                        ...state[NODES].config,
+                        size: state[NODES].config.size + 1.5
+                    }
+                }
+            }
+        }
+        case DECREASE_NODE_SIZE: {
+            return {
+                ...state,
+                [NODES]: {
+                    ...state[NODES],
+                    config: {
+                        ...state[NODES].config,
+                        size: state[NODES].config.size - 1.5
                     }
                 }
             }

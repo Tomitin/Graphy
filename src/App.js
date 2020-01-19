@@ -2,9 +2,18 @@ import React from 'react';
 import Graphy from './containers/Graphy';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { fab } from '@fortawesome/free-brands-svg-icons';
-import { faCheckSquare, faCoffee, faQuestion, faTrash, faSave, faFileUpload } from '@fortawesome/free-solid-svg-icons';
+import { 
+  faCheckSquare, 
+  faCoffee, 
+  faQuestion, 
+  faTrash, 
+  faSave, 
+  faFileUpload, 
+  faSearchMinus, 
+  faSearchPlus 
+} from '@fortawesome/free-solid-svg-icons';
 
-library.add(fab, faQuestion, faCheckSquare, faCoffee, faTrash, faSave, faFileUpload);
+library.add(fab, faQuestion, faCheckSquare, faCoffee, faTrash, faSave, faFileUpload, faSearchMinus, faSearchPlus);
 
 function App() {
   return (

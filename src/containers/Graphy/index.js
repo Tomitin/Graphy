@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { SELECTED_COLOR, NODE_SIZE, NODES, DEFAULT_COLOR } from "./constants";
+import { SELECTED_COLOR, NODE_SIZE, DEFAULT_COLOR } from "./constants";
 import { NodeInstantiator, EdgeInstantiator } from './GraphInstantiator';
 import FileUploadIcon from 'components/molecules/FileUploadIcon';
 import IconButton from 'components/molecules/IconButton';
@@ -16,7 +16,9 @@ import {
     changeColor, 
     restartGraph, 
     addGraph, 
-    updateNode 
+    updateNode,
+    incrementNodeSize,
+    decreaseNodeSize,
 } from './actions';
 import { 
     nodeByIdSelector, 
@@ -25,7 +27,8 @@ import {
     getSelectedNode, 
     getGraphSelector, 
     allEdgesSelector, 
-    allNodesSelector 
+    allNodesSelector,
+    getNodeSize,
 } from './selectors';
 
 const Graphy = () => {
@@ -40,8 +43,9 @@ const Graphy = () => {
     // drawing variables
     const [isLinkingNodes, setIsLinkingNodes] = useState(false);
     // redux data
-    const nodeId = useSelector(state => allNodesSelector(state)).length;
-    const edgeId = useSelector(state => allEdgesSelector(state)).length;
+    const nodeSize = useSelector(state => getNodeSize(state));
+    const nodesLength = useSelector(state => allNodesSelector(state)).length;
+    const edgesLength = useSelector(state => allEdgesSelector(state)).length;
     const graph = useSelector(state => getGraphSelector(state));
     const getNodeById = useSelector(state => nodeByIdSelector(state));
     const edges = useSelector(state => arrayEdgesSelector(state));
@@ -62,6 +66,16 @@ const Graphy = () => {
         const modifiedNode = { ...getNodeById[selectedNodeId], ...inputs }
         //update the node state in redux store
         dispatch(updateNode(modifiedNode));
+    }
+
+    const handleZoomIn = event => {
+        dispatch(incrementNodeSize());
+    }
+
+    const handleZoomOut = event => {
+        if(nodeSize < 10) return;
+        dispatch(decreaseNodeSize());
+        clearCanvas();
     }
 
     const handleSaveClick = event => {
@@ -114,6 +128,7 @@ const Graphy = () => {
 
     const handleDoubleClick = event => {
         createNode(event);
+        clearCanvas();
         const canvas = canvasEl.current;
         canvas.style.cursor = 'pointer';
     }
@@ -151,8 +166,8 @@ const Graphy = () => {
             context.clearRect(0, 0, canvas.width, canvas.height);
             nodes.map(node => {
                 const distanceFromNode = parseInt(distance(node.pos.x, node.pos.y, mousePos.x, mousePos.y));
-                isMouseInsideNode = distanceFromNode < NODE_SIZE;
-                if (isMouseInsideNode === false) isMouseInsideNode = distanceFromNode < NODE_SIZE;
+                isMouseInsideNode = distanceFromNode < nodeSize;
+                if (isMouseInsideNode === false) isMouseInsideNode = distanceFromNode < nodeSize;
                 if ((isMouseInsideNode && mousePressed) || isLinkingNodes) {
                     setIsLinkingNodes(true);
                     const nodeToLink = new NodeSource(node);
@@ -187,7 +202,7 @@ const Graphy = () => {
 
         if (isElementInArray(edges, { source: nodeA.id, target: nodeB.id }, isConnectionRepeated)) 
             return alert('This connection has already been made.');
-        const edgeInstantiator = new EdgeInstantiator(edgeId, nodeA.id, nodeB.id);
+        const edgeInstantiator = new EdgeInstantiator(edgesLength, nodeA.id, nodeB.id);
         dispatch(addEdge(edgeInstantiator.getEdge()));
     }
 
@@ -215,13 +230,13 @@ const Graphy = () => {
     /* ============================================== Nodes ========================================================== */
 
     const getNodeByDistance = () => {
-        return nodes.find(node => parseInt(distance(node.pos.x, node.pos.y, mousePos.x, mousePos.y)) < NODE_SIZE);
+        return nodes.find(node => parseInt(distance(node.pos.x, node.pos.y, mousePos.x, mousePos.y)) < nodeSize);
     };
 
     const createNode = event => {
         const canvasPos = getLocalCanvasAxis(canvasEl.current); // abs. size of element
         const nodePos = getMousePositionInCanvas(event, canvasPos);
-        const nodeInstantiator = new NodeInstantiator(nodeId, nodePos);
+        const nodeInstantiator = new NodeInstantiator(nodesLength, nodePos);
         dispatch(addNode(nodeInstantiator.getNode()));
     };
 
@@ -230,7 +245,7 @@ const Graphy = () => {
     const renderNode = node => {
         const context = getContext2d();
         context.beginPath();
-        context.arc(node.pos.x, node.pos.y, NODE_SIZE, 0, 2 * Math.PI);
+        context.arc(node.pos.x, node.pos.y, nodeSize, 0, 2 * Math.PI);
         context.stroke();
         context.fillStyle = node.color;
         context.fill();
@@ -283,6 +298,8 @@ const Graphy = () => {
             }
             <GraphContainer>
                 <IconGroupCanvas>
+                    <IconButton borderRadius='50%' iconName='search-plus' onClick={handleZoomIn}></IconButton>
+                    <IconButton borderRadius='50%' iconName='search-minus' onClick={handleZoomOut}></IconButton>
                     <a ref={saveIconLink}><IconButton onClick={handleSaveClick} borderRadius='50%' iconName='save'></IconButton></a>
                     <FileUploadIcon onChange={handleUploadClick} borderRadius={'50%'} />
                     <IconButton borderRadius='50%' iconName='question'></IconButton>
