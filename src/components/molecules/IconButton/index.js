@@ -3,16 +3,13 @@ import Button from 'components/atoms/Button';
 import Icon from 'components/atoms/Icon';
 import PropTypes from 'prop-types';
 
-const IconButton = props => {
+const IconButton = ({onClick, iconName, ...props}) => {
     return (
         <Button 
-            borderRadius={props.borderRadius} 
-            padding={props.padding}
-            height={props.height}
-            width={props.width}
-            onClick={props.onClick}
+            {...props}
+            onClick={onClick}
         >
-            <Icon iconName={props.iconName} />
+            <Icon iconName={iconName} />
         </Button>
     );
 }

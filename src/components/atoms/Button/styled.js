@@ -7,7 +7,7 @@ const colorButtonClick = palette('primary', 4, true);
 
 export const Button = styled.button`
     background-color: ${colorButton};
-    border:  none;
+    border: none;
     color: white;
     text-align: center;
     border-radius: ${props => props.borderRadius};
