@@ -1,13 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { SELECTED_COLOR, NODE_SIZE, DEFAULT_COLOR } from "./constants";
+import { SELECTED_COLOR, DEFAULT_COLOR } from "./constants";
 import { NodeInstantiator, EdgeInstantiator } from './GraphInstantiator';
+import { Label } from 'components/atoms/Label';
+import Button from 'components/atoms/Button';
+import Input from 'components/atoms/Input';
+import Textarea from 'components/atoms/Textarea';
 import FileUploadIcon from 'components/molecules/FileUploadIcon';
 import IconButton from 'components/molecules/IconButton';
 import Navbar from 'components/organisms/Navbar';
 import SideMenu from 'components/organisms/SideMenu';
+import ProgressCircle from 'components/atoms/ProgressCircle';
+import Modal from 'components/organisms/Modal';
+import { useInputChange } from 'components/customHooks';
 import { distance } from 'containers/utils';
-import { GraphyCanvas, IconGroupCanvas, GraphContainer } from './styled';
+import { 
+    GraphyCanvas, 
+    IconGroupCanvas, 
+    GraphContainer, 
+    AppContainer, 
+    ProgressContainer
+} from './styled';
 import { NodeSource } from './singletons';
 import { 
     addNode,
@@ -33,15 +46,17 @@ import {
 
 const Graphy = () => {
     // container data
-    const [nodeSource, setNodeSource] = useState({});
+    const [nodeSource, setNodeSource] = useState(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [mousePressed, setMousePressed] = useState(false);
+    const [showModal, setShowModal] = useState(false);
     const dispatch = useDispatch();
     const canvasEl = useRef(null);
-    //icon button group
     const saveIconLink = useRef(null);
+    const [input, handleInputChange] = useInputChange();
     // drawing variables
     const [isLinkingNodes, setIsLinkingNodes] = useState(false);
+    const [mousePointer, setMousePointer] = useState('default');
     // redux data
     const nodeSize = useSelector(state => getNodeSize(state));
     const nodesLength = useSelector(state => allNodesSelector(state)).length;
@@ -54,9 +69,13 @@ const Graphy = () => {
 
     useEffect(() => {
         const canvas = canvasEl.current;
-        canvas.setAttribute('height', '600px');
-        canvas.setAttribute('width', '1400px');
+        canvas.setAttribute('height', '5000px');
+        canvas.setAttribute('width', '5000px');
     }, []);
+
+    useEffect(() => {
+        getNodeByDistance() ? setMousePointer('pointer') : setMousePointer('default');
+    });
 
     /* ==================================================== Events ================================================================ */
 
@@ -66,6 +85,7 @@ const Graphy = () => {
         const modifiedNode = { ...getNodeById[selectedNodeId], ...inputs }
         //update the node state in redux store
         dispatch(updateNode(modifiedNode));
+        eraseLinkingData();
     }
 
     const handleZoomIn = event => {
@@ -114,68 +134,78 @@ const Graphy = () => {
         dispatch(restartGraph());
     }
 
-    const handleClick = event => {
+    const handleClick = async event => {
         const node = getNodeByDistance();
         if (!node) return;
-        //actual node to DEFAULT COLOR
+        //actual selected node to DEFAULT COLOR
         if (selectedNodeId != null) dispatch(changeColor(selectedNodeId, DEFAULT_COLOR))
+        await eraseLinkingData();
         dispatch(selectNode(node.id))
-        //not actual node to SELECTED_COLOR
+        //not actual selected  node to SELECTED_COLOR
         const nodeColor = SELECTED_COLOR;
         const nodeId = node.id;
         dispatch(changeColor(nodeId, nodeColor));
     }
 
+    const handleCancelFormNode = event => {
+        eraseLinkingData();
+    }
+
     const handleDoubleClick = event => {
+        const node = getNodeByDistance();
         createNode(event);
-        clearCanvas();
-        const canvas = canvasEl.current;
-        canvas.style.cursor = 'pointer';
     }
 
     const handleClickHold = event => {
         setMousePressed(true);
+        const canvas = canvasEl.current;
+        const context = getContext2d(); 
+        const clickedNode = getNodeByDistance();
+        // Clear canvas every render
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        nodes.map(node => {
+            if (clickedNode) {
+                setIsLinkingNodes(true);
+                const nodeToLink = new NodeSource(clickedNode);
+                setNodeSource(nodeToLink);
+            }
+        });
     }
 
     const handleMouseUp = event => {
         setMousePressed(false);
-        if (isLinkingNodes) {
-            const nodeTarget = getNodeByDistance();
-            connectNodes(nodeSource.getNode(), nodeTarget);
-            // Reset canvas for redrawing
-            setIsLinkingNodes(false);
-            nodeSource.destroy();
-            clearCanvas();
+        const nodeTarget = getNodeByDistance();
+        if ((nodeSource && nodeTarget) && isLinkingNodes) {
+            if(nodeSource.getNode().id != nodeTarget.id) {
+                connectNodes(nodeSource.getNode(), nodeTarget);
+            }
         }
+        if(nodeSource){
+            nodeSource.destroy();
+            setNodeSource(null);
+        }
+        setIsLinkingNodes(false);
     }
 
     const handleMouseMove = mouse => {
         const canvas = canvasEl.current;
         const context = getContext2d();
-
+        
         const canvasPos = getLocalCanvasAxis(canvas);
         const mousePosInCanvas = getMousePositionInCanvas(mouse, canvasPos);
-        let isMouseInsideNode = false;
-
-        //Display cursor poitner when mouse is inside node
         setMousePos(mousePosInCanvas);
-        const node = getNodeByDistance();
-        node ? canvas.style.cursor = 'pointer' : canvas.style.cursor = 'default';
-        if (mousePressed) {
-            // Clear canvas every render
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            nodes.map(node => {
-                const distanceFromNode = parseInt(distance(node.pos.x, node.pos.y, mousePos.x, mousePos.y));
-                isMouseInsideNode = distanceFromNode < nodeSize;
-                if (isMouseInsideNode === false) isMouseInsideNode = distanceFromNode < nodeSize;
-                if ((isMouseInsideNode && mousePressed) || isLinkingNodes) {
-                    setIsLinkingNodes(true);
-                    const nodeToLink = new NodeSource(node);
-                    setNodeSource(nodeToLink);
-                    renderClickLink(nodeToLink.getNode().pos, mousePos);
-                }
-            });
-        }
+        // Clear canvas every render
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        if(isLinkingNodes) renderEdge(nodeSource.getNode().pos, mousePos);
+        
+    }
+
+    const displayModal = () => {
+        setShowModal(true);
+    }
+
+    const hideModal = () => {
+        setShowModal(false);
     }
 
     /* =================================================== Edges ============================================================== */
@@ -206,7 +236,7 @@ const Graphy = () => {
         dispatch(addEdge(edgeInstantiator.getEdge()));
     }
 
-    const renderClickLink = (start, end) => {
+    const renderEdge = (start, end) => {
         const context = getContext2d();
         context.beginPath();
         context.moveTo(start.x, start.y);
@@ -253,6 +283,25 @@ const Graphy = () => {
 
     /* ================================================= Helper functions ========================================================== */
 
+    const eraseLinkingData = () => {
+        dispatch(changeColor(selectedNodeId, DEFAULT_COLOR));
+        setIsLinkingNodes(false);
+        if(nodeSource) {
+            nodeSource.destroy();
+            setNodeSource(null)
+        }
+        dispatch(selectNode(null));
+    }
+
+    const listenToEnter = (element, buttonTrigger) => {
+        element.addEventListener('keyup', event => {
+            if(event.keyCode == 13) {
+                event.preventDefault();
+                buttonTrigger.click();
+            }
+        })
+    }
+
     const clearCanvas = () => {
         const canvas = canvasEl.current;
         const context = getContext2d();
@@ -287,39 +336,126 @@ const Graphy = () => {
 
     /* =================================================== Rendering ========================================================== */
     return (
-        <>
+        <div>
             <Navbar />
-            {selectedNodeId &&
-                <SideMenu
-                    handleFormSubmit={handleFormSubmit}
-                    title={getNodeById[selectedNodeId].title}
-                    description={getNodeById[selectedNodeId].description}
-                />
-            }
-            <GraphContainer>
-                <IconGroupCanvas>
-                    <IconButton borderRadius='50%' iconName='search-plus' onClick={handleZoomIn}></IconButton>
-                    <IconButton borderRadius='50%' iconName='search-minus' onClick={handleZoomOut}></IconButton>
-                    <a ref={saveIconLink}><IconButton onClick={handleSaveClick} borderRadius='50%' iconName='save'></IconButton></a>
-                    <FileUploadIcon onChange={handleUploadClick} borderRadius={'50%'} />
-                    <IconButton borderRadius='50%' iconName='question'></IconButton>
-                    <IconButton onClick={handleEraseClick} borderRadius='50%' iconName='trash'></IconButton>
-                </IconGroupCanvas>
-                <GraphyCanvas
-                    ref={canvasEl}
-                    onMouseDown={handleClickHold}
-                    onClick={handleClick}
-                    onDoubleClick={handleDoubleClick}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                >
+            <AppContainer>
+                <GraphContainer>
+                    <IconGroupCanvas>
+                        <IconButton 
+                            borderRadius='50%' 
+                            iconName='search-plus'
+                            onClick={handleZoomIn} 
+                        >
+                        </IconButton>
+                        <IconButton 
+                            borderRadius='50%' 
+                            iconName='search-minus' 
+                            onClick={handleZoomOut}
+                        >
+                        </IconButton>
+                        <a ref={saveIconLink}>
+                            <IconButton 
+                                onClick={handleSaveClick} 
+                                borderRadius='50%' 
+                                iconName='save'
+                            >
+                            </IconButton>
+                        </a>
+                        <FileUploadIcon onChange={handleUploadClick} borderRadius={'50%'} />
+                        <IconButton borderRadius='50%' iconName='question'></IconButton>
+                        <IconButton 
+                            onClick={handleEraseClick} 
+                            borderRadius='50%' 
+                            iconName='trash'
+                        >
+                        </IconButton>
+                    </IconGroupCanvas>
+                    <GraphyCanvas
+                        mousePointer={mousePointer}
+                        ref={canvasEl}
+                        onMouseDown={handleClickHold}
+                        onClick={handleClick}
+                        onDoubleClick={handleDoubleClick}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                    >
 
-                    {edges && renderEdges()}
-                    {nodes && renderNodes()}
-                </GraphyCanvas>
-            </GraphContainer>
-            <h4 style={{ float: "right" }}>Coordinates: [{mousePos.x},{mousePos.y}]</h4>
-        </>
+                        {edges && renderEdges()}
+                        {nodes && renderNodes()}
+                    </GraphyCanvas>
+                </GraphContainer>
+                <div style={{flex: '2'}}>
+                    <SideMenu >
+                        {selectedNodeId ?
+                            <form onSubmit={event => handleFormSubmit(event, input)}>
+                                <IconButton 
+                                    iconName='times' 
+                                    onClick={handleCancelFormNode} 
+                                    style={{float: 'right'}}
+                                    >
+                                    X
+                                </IconButton>
+                                <Label>Write a title for:</Label>
+                                <Input 
+                                    name="title" 
+                                    onChange={handleInputChange}
+                                    defaultValue={getNodeById[selectedNodeId].title} 
+                                />
+                                <Label>Write a description</Label>
+                                <Textarea 
+                                    name="description" 
+                                    onChange={handleInputChange} 
+                                    defaultValue={getNodeById[selectedNodeId].description} 
+                                />
+                                <div style={{float: 'right'}}>
+                                    <div style={{display:'inline-block', margin: '5px'}}>
+                                        <Button type='submit' autoFocus>Save</Button>
+                                    </div>
+                                    <div style={{display:'inline-block', margin: '5px'}}>
+                                        <Button type='reset' onClick={handleCancelFormNode}>Cancel</Button>
+                                    </div>
+                                </div>
+                            </form>
+                        :
+                            <div>
+                                <h2>Welcome to Graphy!</h2>
+                                <ul>This is my tracking tool for:
+                                    <li>making decisions</li>
+                                    <li>display & handling data</li>
+                                </ul>
+                                {
+                                    (nodesLength > 0 || edgesLength > 0) && 
+                                    <>
+                                    <h3>Resources:</h3>
+                                    <ProgressContainer>
+                                            <div style={{margin: '0 20px 20px 0'}}>
+                                                <ProgressCircle 
+                                                    rotation={180} 
+                                                    time={'1'} 
+                                                    size={'150px'}
+                                                >
+                                                    {nodesLength} nodes
+                                                </ProgressCircle>
+                                            </div>
+                                            <div style={{margin: '0 20px 20px 0'}}>
+                                                <ProgressCircle 
+                                                    rotation={180} 
+                                                    time={'1'} 
+                                                    size={'150px'}
+                                                >
+                                                    {edgesLength} edges
+                                                </ProgressCircle>
+                                            </div>                                    
+                                    </ProgressContainer>
+                                    </>
+                                    }
+                            </div>
+                        }
+                    </SideMenu>
+                </div>
+            </AppContainer>
+            {/* <h4 style={{ float: "right" }}>Coordinates: [{mousePos.x},{mousePos.y}]</h4> */}
+        </div>
     );
 }
 export default Graphy;

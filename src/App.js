@@ -10,10 +10,22 @@ import {
   faSave, 
   faFileUpload, 
   faSearchMinus, 
-  faSearchPlus 
+  faSearchPlus,
+  faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 
-library.add(fab, faQuestion, faCheckSquare, faCoffee, faTrash, faSave, faFileUpload, faSearchMinus, faSearchPlus);
+library.add(
+  fab, 
+  faQuestion, 
+  faCheckSquare, 
+  faCoffee, 
+  faTrash, 
+  faSave, 
+  faFileUpload, 
+  faSearchMinus,
+  faSearchPlus,
+  faTimes
+);
 
 function App() {
   return (
